@@ -49,7 +49,6 @@ fn draw_powerup(powerup_shield: &Texture2D, powerup_speed: &Texture2D, powerup_s
         } else if powerup_num == &3 {
             draw_texture(powerup_multi, powerup_location.x, powerup_location.y, WHITE);
         }
-        powerup_collected = &true;
     }
 }
 
@@ -166,12 +165,17 @@ async fn main() {
 
             }
 
-            if ball_pos.y <= barrier_thickness || ball_pos.y + ball_size.y >= screen_height - barrier_thickness {
+            if rects_collide(vec2(top_barrier.0, top_barrier.1), vec2(top_barrier.2, top_barrier.3), ball_pos, ball_size) {
                 ball_direction.y = -ball_direction.y;
+                ball_pos.y = top_barrier.1 + top_barrier.3;
+            }
+            if rects_collide(vec2(bottom_barrier.0, bottom_barrier.1), vec2(bottom_barrier.2, bottom_barrier.3), ball_pos, ball_size) {
+                ball_direction.y = -ball_direction.y;
+                ball_pos.y = bottom_barrier.1 - ball_size.y;
             }
 
             if shield_time > 0.0 {
-                if ball_pos.x <= barrier_thickness || ball_pos.x + ball_size.x >= screen_width - barrier_thickness {
+                if rects_collide(vec2(shield.0, shield.1), vec2(shield.2, shield.3), ball_pos, ball_size) {
                     ball_direction.x = -ball_direction.x;
                 }
             }
@@ -182,6 +186,9 @@ async fn main() {
                 } else {
                     lives_ai -= 1;
                 }
+                ball_color = WHITE;
+                paddle1_colour = WHITE;
+                paddle1_hight = 70.0;
                 shield_time = 0.0;
                 speed_time = 0.0;
                 size_time = 0.0;
@@ -191,21 +198,26 @@ async fn main() {
                 ball_speed = default_ball_speed.clone();
                 powerup_num = rand::gen_range(0, 4);
                 powerup_active = false;
+                powerup_collected = false;
             }
 
-            if ball_pos.x <= paddle1_x + paddle1_width && ball_pos.y + ball_size.y >= paddle1_y && ball_pos.y <= paddle1_y + paddle1_hight {
-                let hit_pos = (ball_pos.y + ball_size.y / 2.0) - paddle1_y;
-                let hit_ratio = (hit_pos / paddle1_hight) - 0.5;
-                ball_direction.x = -ball_direction.x;
-                ball_direction.y = ball_direction.y;
-                paddle1_hit = true;
-            }
 
-            if ball_pos.x + ball_size.x >= paddle2_x && ball_pos.y + ball_size.y >= paddle2_y && ball_pos.y <= paddle2_y + paddle2_hight {
-                let hit_pos = (ball_pos.y + ball_size.y / 2.0) - paddle2_y;
-                let hit_ratio = (hit_pos / paddle2_hight) - 0.5;
-                ball_direction.x = -ball_direction.x;
-                ball_direction.y = ball_direction.y;
+            if rects_collide(vec2(paddle1_x, paddle1_y), vec2(paddle1_width, paddle1_hight), ball_pos, ball_size) {
+                if ball_pos.y < paddle1_y || ball_pos.y > paddle1_y + paddle1_hight {
+                    ball_direction.y = -ball_direction.y;
+                } else {
+                    ball_direction.x = -ball_direction.x;
+                    ball_pos.x = paddle1_x + paddle1_width;
+                    paddle1_hit = true;
+                }
+            }
+            if rects_collide(vec2(paddle2_x, paddle2_y), vec2(paddle2_width / 4.0, paddle2_hight), ball_pos, ball_size) {
+                if ball_pos.y < paddle2_y || ball_pos.y > paddle2_y + paddle2_hight {
+                    ball_direction.y = -ball_direction.y;
+                } else {
+                    ball_direction.x = -ball_direction.x;
+                    ball_pos.x = paddle2_x - ball_size.x;
+                }
                 if !powerup_collected && !powerup_active {
                     powerup_location = vec2(paddle2_x - 20.0, paddle2_y + paddle2_hight / 2.0);
                 }
@@ -218,7 +230,7 @@ async fn main() {
                 powerup_num = rand::gen_range(0, 4);
             }
 
-            if rects_collide(vec2(paddle1_x, paddle1_y), vec2(paddle1_width, paddle1_hight), powerup_location, vec2(50.0, 50.0)) {
+            if rects_collide(vec2(paddle1_x, paddle1_y), vec2(paddle1_width, paddle1_hight), powerup_location, vec2(50.0, 50.0)) && powerup_active {
                 powerup_collected = true;
                 paddle1_hit = false;
 
@@ -230,6 +242,7 @@ async fn main() {
                 } else if powerup_num == 2 {
                     size_time = 10.0;
                     paddle1_hight += 50.0;
+                    paddle1_y -= 25.0;
                 } else if powerup_num == 3 {
                     multi_time = 10.0;
                 }
@@ -258,9 +271,9 @@ async fn main() {
             }
         }
 
-        if ball_pos.y < paddle2_y + paddle2_hight / 2.0 {
+        if ball_pos.y < paddle2_y + paddle2_hight / 2.0 && paddle2_y > 10.0 {
             paddle2_y -= paddle2_speed * delta_time;
-        } else {
+        } else if paddle2_y < screen_height - paddle2_hight - 10.0 {
             paddle2_y += paddle2_speed * delta_time;
         }
 

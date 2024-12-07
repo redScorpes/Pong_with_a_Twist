@@ -106,6 +106,7 @@ async fn main() {
     let powerup_speed = load_texture("assets/Pong_PowerUp_Speed.png").await.unwrap();
     let powerup_size = load_texture("assets/Pong_PowerUp_Size.png").await.unwrap();
     let powerup_multi = load_texture("assets/Pong_PowerUp_Mult.png").await.unwrap();
+    let powerup_icon = load_texture("assets/Pong_PowerUp.png").await.unwrap();
 
     let wasd = load_texture("assets/Pong_wasd.png").await.unwrap();
     let space_bar = load_texture("assets/Pong_SpaceBar.png").await.unwrap();
@@ -446,14 +447,20 @@ async fn main() {
         }
 
         if lives_player == 0 {
-                draw_text("Game Over", screen_width / 2.0 - 100.0, screen_height / 2.0, 40.0, WHITE);
+                let size = measure_text("Game Over", None, 40, 1.0);
+                draw_text("Game Over", screen_width / 2.0 - size.width / 2.0, screen_height / 2.0, 40.0, WHITE);
+                let size = measure_text("Press Space to Play Again", None, 25, 1.0);
+                draw_text("Press Space to Play Again", screen_width / 2.0 - size.width / 2.0, screen_height / 2.0 + 50.0, 25.0, WHITE);
                 if is_key_pressed(KeyCode::Space) {
                     lives_player = 3;
                     lives_ai = 3;
                     game_started = false;
                 }
         } else if lives_ai == 0 {
-                draw_text("You Win", screen_width / 2.0 - 100.0, screen_height / 2.0, 40.0, WHITE);
+                let size = measure_text("You Win", None, 40, 1.0);
+                draw_text("You Win", screen_width / 2.0 - size.width / 2.0, screen_height / 2.0, 40.0, WHITE);
+                let size = measure_text("Press Space to Play Again", None, 25, 1.0);
+                draw_text("Press Space to Play Again", screen_width / 2.0 - size.width / 2.0, screen_height / 2.0 + 50.0, 25.0, WHITE);
                 if is_key_pressed(KeyCode::Space) {
                     lives_player = 3;
                     lives_ai = 3;
@@ -466,7 +473,7 @@ async fn main() {
                 let mut size = measure_text("Pong with a Twist", None, 40, 1.0);
                 draw_text("Pong with a Twist", screen_width / 2.0 - size.width / 2.0, 50.0, 40.0, WHITE);
 
-                draw_text("Press Space to Start", screen_width / 2.0 - 100.0, 500.0, 25.0, WHITE);
+                draw_text("Press Space to Start", screen_width / 2.0 - 100.0, 350.0, 25.0, WHITE);
 
                 draw_texture(&wasd, 200.0, 100.0, WHITE);
                 draw_text("Press W and S to move the paddle", 255.0, 135.0, 20.0, WHITE);
@@ -474,7 +481,10 @@ async fn main() {
                 draw_texture(&space_bar, 137.5, 162.5, WHITE);
                 draw_text("Hold Space to move the paddle faster", 255.0, 200.0, 20.0, WHITE);
 
-                draw_texture(&powerup_shield, 200.0, 250.0, WHITE);
+                draw_texture(&powerup_icon, 207.5, 240.0, WHITE);
+                draw_text("PowerUps: Collect PowerUps with your paddle", 255.0, 265.0, 20.0, WHITE);
+
+                /*draw_texture(&powerup_shield, 200.0, 250.0, WHITE);
                 draw_text("Shield Powerup: Spawns a shield behind your paddle", 255.0, 275.0, 20.0, WHITE);
                 draw_texture(&powerup_speed, 200.0, 300.0, WHITE);
                 draw_text("Speed Powerup: Increases the speed of the ball", 255.0, 325.0, 20.0, WHITE);
@@ -482,7 +492,7 @@ async fn main() {
                 draw_texture(&powerup_size, 200.0, 350.0, WHITE);
                 draw_text("Size Powerup: Increases the size of your paddle", 255.0, 375.0, 20.0, WHITE);
                 draw_texture(&powerup_multi, 200.0, 400.0, WHITE);
-                draw_text("Multi Powerup: Adds a second ball to the game", 255.0, 425.0, 20.0, WHITE);
+                draw_text("Multi Powerup: Adds a second ball to the game", 255.0, 425.0, 20.0, WHITE);*/
             } else if lives_player >= 0 || lives_ai >= 0 {
                 let mut size = measure_text("Press Space to Continue", None, 25, 1.0);
                 draw_text("Press Space to Continue", screen_width / 2.0 - size.width / 2.0, 300.0, 25.0, WHITE);

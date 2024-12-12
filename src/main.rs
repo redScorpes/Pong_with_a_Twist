@@ -40,7 +40,7 @@ fn draw_lives_ai(lives_ai: i32, pong_heart: &Texture2D, screen_width: f32) {
     }
 }
 
-fn draw_powerup(powerup_shield: &Texture2D, powerup_speed: &Texture2D, powerup_size: &Texture2D, powerup_multi: &Texture2D, powerup_num: &i32, powerup_location: &Vec2, mut powerup_collected: &bool) {
+fn draw_powerup(powerup_shield: &Texture2D, powerup_speed: &Texture2D, powerup_size: &Texture2D, powerup_multi: &Texture2D, powerup_num: &i32, powerup_location: &Vec2, powerup_collected: &bool) {
     if !powerup_collected {
         if powerup_num == &0 {
             draw_texture(powerup_shield, powerup_location.x, powerup_location.y, WHITE);
@@ -121,7 +121,8 @@ impl PauseMenu {
         powerup_multi: &Texture2D,
         powerup_num: &i32,
         powerup_location: &Vec2,
-        pong_hit: &Sound,
+        stamina_bar_time: &mut f32,
+        out_of_stamina: &mut bool,
     ) {
 
         draw_lives_player(*lives_player, pong_heart);
@@ -140,6 +141,8 @@ impl PauseMenu {
         if *second_ball {
             draw_rectangle(ball2_pos.x, ball2_pos.y, ball2_size.x, ball2_size.y, ball2_color);
         }
+
+        draw_stamina_bar(*stamina_bar_time, *out_of_stamina);
 
         // Render a simple pause menu
         draw_rectangle(0.0, 0.0, screen_width, screen_height, Color::new(0.0, 0.0, 0.0, 0.7));
@@ -191,12 +194,12 @@ impl PauseMenu {
                     second_ball,
                     paddle1_hight,
                     paddle1_colour,
-                    screen_width,
-                    screen_height,
                     default_ball_speed,
                     paddle1_x,
                     paddle1_y,
                     paddle1_width,
+                    stamina_bar_time,
+                    out_of_stamina,
                 );
             }
         }
@@ -285,12 +288,12 @@ fn restart_game(
     second_ball: &mut bool,
     paddle1_hight: &mut f32,
     paddle1_colour: &mut Color,
-    screen_width: f32,
-    screen_height: f32,
     default_ball_speed: f32,
     paddle1_x: f32,
     paddle1_y: f32,
     paddle1_width: f32,
+    stamina_bar_time: &mut f32,
+    out_of_stamina: &mut bool,
 ) {
     *lives_player = 3;
     *lives_ai = 3;
@@ -307,7 +310,29 @@ fn restart_game(
     *second_ball = false;
     *paddle1_hight = 70.0;
     *paddle1_colour = WHITE;
+    *stamina_bar_time = 5.0;
+    *out_of_stamina = false;
 }
+
+fn draw_stamina_bar (stamina_bar_time: f32, out_of_stamina: bool) {
+    let screen_width = window_conf().window_width as f32;
+
+    let stamina_bar_width = 1200.0;
+    let stamina_bar_height = 10.0;
+
+    let stamina_bar_x = (screen_width - stamina_bar_width) / 2.0;
+    let stamina_bar_y = 10.0;
+
+    let stamina_bar_fill = (stamina_bar_time * (stamina_bar_width / 5.0)) / 2.0;
+
+    draw_rectangle(stamina_bar_x + (stamina_bar_width - stamina_bar_fill) / 2.0, stamina_bar_y, stamina_bar_fill, stamina_bar_height, WHITE);
+
+    if out_of_stamina {
+        let blink = (get_time() * 10.0).sin() > 0.0;
+        draw_rectangle(stamina_bar_x + (stamina_bar_width - stamina_bar_fill) / 2.0, stamina_bar_y, stamina_bar_fill, stamina_bar_height, if blink { WHITE } else { BLACK });
+    }
+}
+
 #[macroquad::main(window_conf)]
 async fn main() {
 
@@ -320,7 +345,7 @@ async fn main() {
 
 
     let mut paddle1_hight: f32 = 70.0;
-    let mut paddle1_width: f32 = 15.0;
+    let paddle1_width: f32 = 15.0;
     let mut paddle1_x: f32 = 10.0;
     let mut paddle1_y: f32 = 100.0;
     let mut paddle1_speed: f32 = 200.0;
@@ -351,7 +376,6 @@ async fn main() {
     let mut lives_ai = 3;
 
     let mut game_started = false;
-    let mut game_over = false;
 
     let powerup_shield = load_texture("assets/Pong_PowerUp_Shield.png").await.unwrap();
     let powerup_speed = load_texture("assets/Pong_PowerUp_Speed.png").await.unwrap();
@@ -394,6 +418,9 @@ async fn main() {
     let mut first_start = true;
 
     let mut two_player = false;
+
+    let mut stamina_bar_time = 3.0;
+    let mut out_of_stamina = false;
 
 
     loop {
@@ -446,7 +473,8 @@ async fn main() {
                 &powerup_multi,
                 &powerup_num,
                 &powerup_location,
-                &pong_hit,
+                &mut stamina_bar_time,
+                &mut out_of_stamina,
             );
         } else {
             let delta_time = get_frame_time();
@@ -519,6 +547,18 @@ async fn main() {
                 } else {
                     paddle1_hight = 70.0;
                     paddle1_colour = WHITE;
+                }
+
+                if powerup_collected && powerup_num == 2 {
+                    if size_time <= 0.0 {
+                        if paddle1_hight == 140.0 {
+                            paddle1_y += 25.0;
+                        } else if paddle1_hight == 190.0 {
+                            paddle1_hight += 50.0;
+                        } else if paddle1_hight == 240.0{
+                            paddle1_hight += 75.0;
+                        }
+                    }
                 }
 
                 if multi_time > 0.0 {
@@ -597,6 +637,8 @@ async fn main() {
                     powerup_active = false;
                     powerup_collected = false;
                     second_ball = false;
+                    stamina_bar_time = 5.0;
+                    out_of_stamina = false;
                 }
 
                 if rects_collide(vec2(paddle1_x, paddle1_y), vec2(paddle1_width, paddle1_hight), ball_pos, ball_size) {
@@ -695,9 +737,28 @@ async fn main() {
             clear_background(BLACK);
 
             if is_key_down(KeyCode::Space) {
-                paddle1_speed = 400.0;
+                if !out_of_stamina {
+                    stamina_bar_time -= delta_time * 2.0;
+                    paddle1_speed = 400.0;
+                } else {
+                    if stamina_bar_time < 5.0 {
+                        stamina_bar_time += delta_time;
+                    }
+                    paddle1_speed = 200.0;
+                }
             } else {
+                if stamina_bar_time < 5.0 {
+                    stamina_bar_time += delta_time;
+                }
                 paddle1_speed = 200.0;
+            }
+
+            if stamina_bar_time <= 0.0 {
+                stamina_bar_time = 0.0;
+                out_of_stamina = true;
+            } else if stamina_bar_time >= 5.0 {
+                stamina_bar_time = 5.0;
+                out_of_stamina = false;
             }
 
             if paddle1_y > 0.0 + 10.0 {
@@ -771,6 +832,8 @@ async fn main() {
             if powerup_active {
                 draw_powerup(&powerup_shield, &powerup_speed, &powerup_size, &powerup_multi, &powerup_num, &powerup_location, &powerup_collected);
             }
+
+            draw_stamina_bar(stamina_bar_time, out_of_stamina);
 
             if lives_player == 0 {
                 let size = measure_text("Game Over", None, 40, 1.0);

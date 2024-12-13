@@ -492,7 +492,7 @@ async fn main() {
                 ball_pos += ball_direction * delta_time * ball_speed;
 
                 if powerup_active {
-                    powerup_location.x -= 250.0 * delta_time;
+                    powerup_location.x -= 150.0 * delta_time;
                 }
 
                 if shield_time > 0.0 {

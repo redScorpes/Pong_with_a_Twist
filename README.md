@@ -1,6 +1,6 @@
 ## Pong with a Twist
 
-This is my personal Twist on Pong with PowerUps, a Stamina-Bar and local multiplayer.
+This is my personal Twist on Pong made in Rust with PowerUps, a Stamina-Bar and local multiplayer.
 
 ### List of the PowerUps which currently are in the game:
 
